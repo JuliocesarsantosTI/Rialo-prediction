@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Prediction Rialo · Rialo</title>
+<script>(function(){try{var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<script>window.process={env:{},nextTick:function(f){setTimeout(f,0)}};window.global=window;</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2.13.0/dist/index.umd.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
+<style>
+  html[data-theme="light"]{
+    --bg:#F4F8FF; --bg2:#EAF1FE; --panel:#FFFFFF; --panel2:#F4F7FD; --line:#E1E9F5;
+    --text:#0E1B33; --muted:#5C6B86;
+    --blue:#2B6BFF; --blue-2:#4FA8FF; --gold:#F2B53B; --gold-2:#FFD37A;
+    --yes:#14A06A; --yes-dim:#dcf6ea; --no:#E23A66; --no-dim:#fbe1e9;
+    --shadow:0 12px 34px rgba(43,107,255,.10); --shadow-sm:0 4px 14px rgba(43,107,255,.08);
+    --btext:#ffffff; --onaccent:#08122a;
+  }
+  html[data-theme="dark"]{
+    --bg:#070B16; --bg2:#0C1426; --panel:#101a30; --panel2:#0c1424; --line:#1e2c47;
+    --text:#EAF1FF; --muted:#93A4C4;
+    --blue:#4F8BFF; --blue-2:#6FB6FF; --gold:#F2B53B; --gold-2:#FFD37A;
+    --yes:#34D399; --yes-dim:#0f3d31; --no:#FB7185; --no-dim:#43202b;
+    --shadow:0 14px 40px rgba(0,0,0,.5); --shadow-sm:0 6px 18px rgba(0,0,0,.4);
+    --btext:#06122a; --onaccent:#ffffff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font-family:"Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
+  body{min-height:100vh;position:relative;overflow-x:hidden}
+  /* ambient backdrop */
+  .bgfx{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .bgfx .b1{position:absolute;top:-160px;left:-120px;width:520px;height:520px;border-radius:50%;
+    background:radial-gradient(circle, color-mix(in srgb,var(--blue) 30%, transparent), transparent 65%);filter:blur(30px);animation:drift 16s ease-in-out infinite}
+  .bgfx .b2{position:absolute;bottom:-200px;right:-140px;width:560px;height:560px;border-radius:50%;
+    background:radial-gradient(circle, color-mix(in srgb,var(--gold) 26%, transparent), transparent 65%);filter:blur(34px);animation:drift 20s ease-in-out infinite reverse}
+  @keyframes drift{0%,100%{transform:translate(0,0)}50%{transform:translate(40px,40px)}}
+
+  .shell{position:relative;z-index:1;max-width:1080px;margin:0 auto;
+    padding:18px clamp(16px,4vw,40px) 60px;min-height:100vh}
+  header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0}
+  .brand{display:flex;align-items:center;gap:11px;min-width:0}
+  .mark{width:34px;height:34px;border-radius:10px;flex:none;
+    background:linear-gradient(135deg,var(--blue),var(--blue-2) 60%,var(--gold));
+    box-shadow:0 6px 20px color-mix(in srgb,var(--blue) 45%, transparent)}
+  .brand .t{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:18px;letter-spacing:-.01em;line-height:1}
+  .brand .s{font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+  .hbtns{display:flex;gap:9px;align-items:center}
+  .icon{width:40px;height:40px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--text);
+    cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-sm)}
+  .wallet{font-family:"IBM Plex Mono",monospace;font-size:13px;border:0;color:var(--btext);
+    background:linear-gradient(135deg,var(--blue),var(--blue-2));padding:11px 16px;border-radius:999px;cursor:pointer;white-space:nowrap;
+    box-shadow:0 8px 22px color-mix(in srgb,var(--blue) 38%, transparent)}
+  .wallet:disabled{opacity:.7}
+
+  .hero{margin:26px 0 18px;max-width:680px}
+  .hero h1{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:clamp(26px,5vw,44px);line-height:1.08;letter-spacing:-.025em;margin:0}
+  .hero h1 .g{background:linear-gradient(120deg,var(--blue),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{color:var(--muted);font-size:15px;line-height:1.55;margin:12px 0 0;max-width:560px}
+
+  .tabs{position:relative;display:inline-grid;grid-template-columns:repeat(3,minmax(96px,1fr));gap:0;margin:8px 0 22px;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:5px;box-shadow:var(--shadow-sm)}
+  .tabs button{position:relative;z-index:1;background:none;border:0;color:var(--muted);cursor:pointer;
+    font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:14px;padding:11px 14px;border-radius:10px;transition:color .25s}
+  .tabs button.on{color:var(--btext)}
+  .tabs .ind{position:absolute;z-index:0;top:5px;bottom:5px;left:5px;width:calc(33.333% - 3.3px);border-radius:10px;
+    background:linear-gradient(135deg,var(--blue),var(--blue-2));box-shadow:0 6px 18px color-mix(in srgb,var(--blue) 40%, transparent);
+    transition:transform .32s cubic-bezier(.22,1,.36,1)}
+  .tabs.t1 .ind{transform:translateX(100%)} .tabs.t2 .ind{transform:translateX(200%)}
+  .view{display:none;animation:fade .3s ease}
+  .view.on{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  /* market grid */
+  .mlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+  .mcard{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:20px;cursor:pointer;
+    box-shadow:var(--shadow);transition:transform .16s,box-shadow .16s,border-color .16s;overflow:hidden}
+  .mcard::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--blue),var(--gold))}
+  .mcard:hover{transform:translateY(-3px);box-shadow:0 18px 44px color-mix(in srgb,var(--blue) 16%, transparent);border-color:color-mix(in srgb,var(--blue) 40%, var(--line))}
+  .mcard .mq{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:18px;line-height:1.3;margin:6px 0 16px;min-height:46px}
+  .mini{height:9px;border-radius:6px;overflow:hidden;background:var(--no-dim);display:flex}
+  .mini .y{height:100%;background:linear-gradient(90deg,var(--yes),color-mix(in srgb,var(--yes) 70%, var(--blue)))}
+  .mmeta{display:flex;justify-content:space-between;margin-top:10px;font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600}
+  .mmeta .yt{color:var(--yes)} .mmeta .nt{color:var(--no)}
+  .msub{margin-top:12px;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .pill{font-family:"IBM Plex Mono",monospace;font-size:10px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);white-space:nowrap}
+  .pill.live{color:var(--yes);border-color:color-mix(in srgb,var(--yes) 45%, transparent);background:var(--yes-dim)}
+  .pill.win{color:#fff;background:linear-gradient(135deg,var(--blue),var(--gold));border-color:transparent}
+  .pill.closed{color:var(--muted)}
+  .listempty{grid-column:1/-1;text-align:center;color:var(--muted);padding:60px 10px;font-size:15px;
+    background:var(--panel);border:1px dashed var(--line);border-radius:20px}
+
+  /* detail overlay */
+  .detail{position:fixed;inset:0;z-index:30;background:var(--bg);overflow-y:auto;display:none}
+  .detail.on{display:block}
+  .detail .inner{max-width:720px;margin:0 auto;padding:22px clamp(16px,4vw,32px) 60px}
+  .back{display:inline-flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);color:var(--muted);
+    cursor:pointer;font-family:"IBM Plex Mono",monospace;font-size:13px;padding:9px 14px;border-radius:999px;margin-bottom:14px;box-shadow:var(--shadow-sm)}
+  h1.q{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:clamp(22px,4vw,30px);line-height:1.2;margin:6px 0 18px;letter-spacing:-.02em}
+  .meter{position:relative;height:58px;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:var(--panel2);display:flex;box-shadow:var(--shadow-sm)}
+  .meter .seg{display:flex;align-items:center;height:100%;transition:width .55s cubic-bezier(.22,1,.36,1)}
+  .meter .yes{background:linear-gradient(90deg,var(--yes-dim),color-mix(in srgb,var(--yes) 26%, transparent));border-right:1px solid var(--line)}
+  .meter .no{background:linear-gradient(270deg,var(--no-dim),color-mix(in srgb,var(--no) 22%, transparent))}
+  .meter .lab{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:13px;padding:0 14px;white-space:nowrap}
+  .meter .yes .lab{color:var(--yes)} .meter .no .lab{color:var(--no);margin-left:auto}
+  .pcts{display:flex;justify-content:space-between;margin-top:12px;font-family:"Space Grotesk",sans-serif}
+  .pcts .p{font-size:32px;font-weight:700;letter-spacing:-.02em}
+  .pcts .yesP{color:var(--yes)} .pcts .noP{color:var(--no);text-align:right}
+  .pcts small{display:block;font-family:"IBM Plex Mono",monospace;font-weight:500;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .poolrow{display:flex;justify-content:space-between;margin-top:5px;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted)}
+  .card{margin-top:20px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow)}
+  .card label{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .inwrap{display:flex;align-items:center;gap:8px;margin-top:9px}
+  .inwrap input{flex:1;background:var(--panel2);border:1px solid var(--line);color:var(--text);font-family:"IBM Plex Mono",monospace;font-size:19px;padding:12px 14px;border-radius:12px;width:100%}
+  .inwrap input:focus{outline:none;border-color:var(--blue)}
+  .inwrap .unit{font-family:"IBM Plex Mono",monospace;color:var(--muted);font-size:13px}
+  .chips{display:flex;gap:8px;margin-top:11px}
+  .chip{flex:1;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-family:"IBM Plex Mono",monospace;font-size:13px;padding:9px 0;border-radius:10px;text-align:center;cursor:pointer}
+  .chip:hover{border-color:var(--blue)}
+  .btns{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+  .buy{border:0;border-radius:13px;padding:15px;cursor:pointer;font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:15px;color:#fff;box-shadow:var(--shadow-sm)}
+  .buy.y{background:linear-gradient(135deg,var(--yes),#0c8f5e)} .buy.n{background:linear-gradient(135deg,var(--no),#c22852)}
+  .buy:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:18px;font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted)}
+  .row b{color:var(--text)}
+  .ghost{border:1px solid var(--line);background:var(--panel);color:var(--text);font-family:"IBM Plex Mono",monospace;font-size:12px;padding:9px 13px;border-radius:10px;cursor:pointer}
+  .ghost:hover{border-color:var(--gold)}
+  .claim{width:100%;margin-top:16px;border:0;background:linear-gradient(135deg,var(--gold),var(--gold-2));color:var(--onaccent);font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:15px;padding:15px;border-radius:13px;cursor:pointer;display:none;box-shadow:0 8px 22px color-mix(in srgb,var(--gold) 40%, transparent)}
+  .source{margin-top:20px;border:1px dashed color-mix(in srgb,var(--blue) 35%, var(--line));border-radius:14px;padding:14px 16px;background:color-mix(in srgb,var(--blue) 5%, var(--panel))}
+  .source .k{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--blue)}
+  .source .v{margin-top:5px;font-size:13px} .source .v span{color:var(--muted)}
+  .banner{margin-top:16px;border-radius:13px;padding:13px 16px;font-size:13px;display:none}
+  .banner.show{display:block;background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow-sm)}
+  .banner .w{font-family:"Space Grotesk",sans-serif;font-weight:600}
+
+  /* chat */
+  .chat{display:flex;flex-direction:column;height:min(620px,calc(100vh - 290px));min-height:380px;
+    background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:16px;box-shadow:var(--shadow);max-width:760px}
+  .thread{flex:1;overflow-y:auto;padding:4px 4px 8px;display:flex;flex-direction:column;gap:12px}
+  .empty{margin:auto;text-align:center;color:var(--muted);max-width:340px}
+  .empty .big{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:20px;color:var(--text);margin-bottom:6px}
+  .empty .ex{display:block;margin-top:9px;font-size:13px;border:1px solid var(--line);border-radius:12px;padding:11px 13px;cursor:pointer;background:var(--panel2)}
+  .empty .ex:hover{border-color:var(--blue)}
+  .msg{max-width:88%;padding:12px 14px;border-radius:16px;font-size:14px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word;animation:fade .25s ease}
+  .msg.me{align-self:flex-end;background:linear-gradient(135deg,var(--blue),var(--blue-2));color:#fff;border-bottom-right-radius:6px;font-weight:500}
+  .msg.ai{align-self:flex-start;background:var(--panel2);border:1px solid var(--line);border-bottom-left-radius:6px}
+  .msg.ai .tag{display:block;font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--blue);margin-bottom:5px}
+  .msg.ai.think{color:var(--muted)}
+  .composer{display:flex;gap:9px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+  .composer input{flex:1;background:var(--panel2);border:1px solid var(--line);color:var(--text);font-family:"Inter",sans-serif;font-size:14px;padding:13px 15px;border-radius:13px}
+  .composer input:focus{outline:none;border-color:var(--blue)}
+  .send{border:0;border-radius:13px;padding:0 20px;cursor:pointer;color:#fff;font-weight:700;font-family:"Space Grotesk",sans-serif;background:linear-gradient(135deg,var(--blue),var(--blue-2))}
+  .send:disabled{opacity:.5;cursor:not-allowed}
+  .disclaimer{font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--muted);text-align:center;margin-top:10px;letter-spacing:.04em}
+
+  .corner{position:absolute;top:0;right:0;width:min(620px,58%);height:auto;z-index:0;pointer-events:none;
+    -webkit-mask-image:linear-gradient(to bottom left, #000 28%, rgba(0,0,0,.35) 60%, transparent 82%);
+    mask-image:linear-gradient(to bottom left, #000 28%, rgba(0,0,0,.35) 60%, transparent 82%);opacity:.92}
+  .corner img{width:100%;height:auto;display:block}
+  @media (max-width:760px){ .corner{width:75%;opacity:.5} }
+  .shell > header, .hero, .tabs, .view{position:relative;z-index:1}
+  header .hbtns{position:relative;z-index:2}
+
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--panel);border:1px solid var(--line);color:var(--text);
+    padding:12px 18px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:50;max-width:90%;text-align:center;box-shadow:var(--shadow)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .muted{color:var(--muted)}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+  <div class="bgfx"><div class="b1"></div><div class="b2"></div></div>
+  <div class="shell">
+    <header>
+      <div class="brand">
+        <div class="mark"></div>
+        <div><div class="t">Rialo Prediction</div><div class="s">For Rialo · Base Sepolia</div></div>
+      </div>
+      <div class="hbtns">
+        <button class="icon" id="theme" title="Toggle theme">☾</button>
+        <button class="wallet" id="wallet">Connect wallet</button>
+      </div>
+    </header>
+
+    <div class="corner"><img src="fdv.jpg" alt="" /></div>
+
+    <div class="hero">
+      <h1>Bet on what's <span class="g">real</span>.<br>Settled from the source.</h1>
+      <p>An on-chain prediction market where each market resolves itself from a primary web source — no oracle committee, no admin button. Built to run on Rialo.</p>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <div class="ind"></div>
+      <button class="on" data-tab="0">Active</button>
+      <button data-tab="1">Ended</button>
+      <button data-tab="2">Ask Rialo</button>
+    </div>
+
+    <section class="view on" id="view0"><div class="mlist" id="listActive"><div class="listempty">Loading markets…</div></div></section>
+    <section class="view" id="view1"><div class="mlist" id="listEnded"><div class="listempty">Loading…</div></div></section>
+    <section class="view" id="view2">
+      <div class="chat">
+        <div class="thread" id="thread">
+          <div class="empty" id="empty">
+            <div class="big">Ask Rialo</div>
+            <div>Answers straight from the Rialo docs. Nothing made up.</div>
+            <span class="ex">What makes Rialo different from other L1s?</span>
+            <span class="ex">What is Rialo Edge?</span>
+            <span class="ex">Is the network live yet?</span>
+          </div>
+        </div>
+        <div class="composer">
+          <input id="chatInput" placeholder="Ask about Rialo…" maxlength="1000" />
+          <button class="send" id="chatSend">Send</button>
+        </div>
+        <div class="disclaimer">Answers come only from the provided Rialo docs · no chat memory</div>
+      </div>
+    </section>
+  </div>
+
+  <div class="detail" id="detail">
+    <div class="inner">
+      <button class="back" id="back">← All markets</button>
+      <h1 class="q" id="question">…</h1>
+      <div class="meter"><div class="seg yes" id="segYes" style="width:50%"><span class="lab">YES</span></div><div class="seg no" id="segNo" style="width:50%"><span class="lab">NO</span></div></div>
+      <div class="pcts"><div class="p yesP"><span id="yesP">50.0%</span><small>Yes pool</small></div><div class="p noP"><span id="noP">50.0%</span><small>No pool</small></div></div>
+      <div class="poolrow"><span id="poolYes">YES pool: 0</span><span id="poolNo">NO pool: 0</span></div>
+      <div class="card">
+        <label>Stake amount</label>
+        <div class="inwrap"><input id="amt" inputmode="decimal" value="10" /><span class="unit">gUSDC</span></div>
+        <div class="chips" id="chips"></div>
+        <div class="btns"><button class="buy y" id="buyY">Back YES</button><button class="buy n" id="buyN">Back NO</button></div>
+      </div>
+      <div class="row"><span>Your stake — YES <b id="posY">0</b> · NO <b id="posN">0</b></span><button class="ghost" id="faucet">Get test gUSDC</button></div>
+      <div class="row"><span>Wallet balance</span><b id="usdcBal">— gUSDC</b></div>
+      <button class="claim" id="claim">Claim winnings</button>
+      <div class="source"><div class="k">Settles from</div><div class="v" id="source">a primary web source <span>— read at resolution and reported on-chain. On Rialo this read happens on-chain (Rialo Edge).</span></div></div>
+      <div class="banner" id="banner"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+  const CFG = {
+    projectId: "ff9798125c47b4ed814ead68aa8182b7",
+    market:    "0x93c9d37b1E63B4b13Af8D6F02015c4f31aFC56e9",
+    usdc:      "0xcdc21cF8169629eD9FBF097B5C5349f0f023457A",
+    rpc:       "https://sepolia.base.org",
+    chainId:   84532, chainHex:"0x14a34",
+    explorer:  "https://sepolia.basescan.org",
+    hide:      [1,2,3],
+    sourceLabel:"CoinGecko price API"
+  };
+  const MARKET_ABI = [
+    "function marketCount() view returns (uint256)",
+    "function getMarket(uint256) view returns (string question, uint64 closeTime, bool resolved, uint8 winner, bool hasWinner, uint256 poolYes, uint256 poolNo)",
+    "function getStake(uint256, address) view returns (uint256 yes, uint256 no)",
+    "function quoteClaim(uint256, address) view returns (uint256)",
+    "function claimed(uint256, address) view returns (bool)",
+    "function bet(uint256 id, uint8 outcome, uint256 amount)",
+    "function claim(uint256 id)"
+  ];
+  const USDC_ABI = [
+    "function mint(uint256 amount)",
+    "function approve(address spender, uint256 amount) returns (bool)",
+    "function allowance(address owner, address spender) view returns (uint256)",
+    "function balanceOf(address) view returns (uint256)"
+  ];
+  const DEC = 6n;
+  const $ = (id)=>document.getElementById(id);
+  const fmt = (bn)=>(Number(bn)/1e6).toLocaleString(undefined,{maximumFractionDigits:2});
+  const toUnits = (s)=>{ const n=Number(s); return n>0?BigInt(Math.round(n*1e6)):0n; };
+  function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show"); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),2400); }
+  function esc(s){ return String(s).replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch])); }
+
+  function applyTheme(t){ document.documentElement.setAttribute("data-theme",t); try{localStorage.setItem("theme",t);}catch(e){} $("theme").textContent = t==="dark" ? "☀" : "☾"; }
+  applyTheme(document.documentElement.getAttribute("data-theme")||"light");
+  $("theme").onclick=()=>applyTheme(document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark");
+
+  const tabs=$("tabs");
+  tabs.querySelectorAll("button").forEach(b=>b.onclick=()=>{
+    const i=Number(b.dataset.tab);
+    tabs.className="tabs"+(i?(" t"+i):"");
+    tabs.querySelectorAll("button").forEach(x=>x.classList.toggle("on", x===b));
+    [0,1,2].forEach(n=>$("view"+n).classList.toggle("on", n===i));
+    if (i===2) setTimeout(()=>$("chatInput").focus(),50);
+  });
+
+  // chat
+  let chatBusy=false;
+  function addMsg(text, who){
+    var e=$("empty"); if(e) e.remove();
+    const el=document.createElement("div"); el.className="msg "+(who==="me"?"me":"ai");
+    if (who!=="me"){ const t=document.createElement("span"); t.className="tag"; t.textContent="◆ Rialo"; el.appendChild(t); }
+    el.appendChild(document.createTextNode(text)); $("thread").appendChild(el); $("thread").scrollTop=$("thread").scrollHeight; return el;
+  }
+  async function sendChat(){
+    const inp=$("chatInput"); const q=inp.value.trim(); if (!q || chatBusy) return;
+    chatBusy=true; $("chatSend").disabled=true; inp.value=""; addMsg(q,"me");
+    const thinking=addMsg("Thinking…","ai"); thinking.classList.add("think");
+    try{
+      const r=await fetch("/api/ask",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:q})});
+      const d=await r.json().catch(()=>({})); thinking.remove();
+      addMsg(r.ok ? (d.answer||"No answer.") : (d.error||"Couldn't reach the assistant."), "ai");
+    }catch(e){ thinking.remove(); addMsg("Network error. Please try again.","ai"); }
+    finally{ chatBusy=false; $("chatSend").disabled=false; inp.focus(); }
+  }
+  $("chatSend").onclick=sendChat;
+  $("chatInput").addEventListener("keydown",e=>{ if(e.key==="Enter") sendChat(); });
+  document.addEventListener("click",e=>{ if(e.target.classList.contains("ex")){ $("chatInput").value=e.target.textContent; sendChat(); }});
+
+  // wallet
+  const readProvider=new ethers.JsonRpcProvider(CFG.rpc, CFG.chainId);
+  let signer=null, account=null;
+  function pickEP(){ if (window.EthereumProvider && window.EthereumProvider.init) return window.EthereumProvider;
+    var m=window["@walletconnect/ethereum-provider"]; if (m&&m.EthereumProvider) return m.EthereumProvider; if (m&&m.init) return m; return null; }
+  async function getEip1193(){
+    if (window.ethereum) return window.ethereum;
+    const EP=pickEP(); if(!EP) throw new Error("Wallet library not loaded. Refresh and try again.");
+    const wc=await EP.init({ projectId:CFG.projectId, chains:[CFG.chainId], optionalChains:[CFG.chainId], showQrModal:true,
+      metadata:{name:"Prediction Arc",description:"On-chain prediction market on Base Sepolia",url:location.origin,icons:[]}});
+    await wc.connect(); return wc;
+  }
+  async function ensureNetwork(eip){
+    try{ await eip.request({method:"wallet_switchEthereumChain",params:[{chainId:CFG.chainHex}]}); }
+    catch(e){ if(e&&(e.code===4902||(e.data&&e.data.originalError&&e.data.originalError.code===4902))){
+      await eip.request({method:"wallet_addEthereumChain",params:[{chainId:CFG.chainHex,chainName:"Base Sepolia",
+        nativeCurrency:{name:"Ether",symbol:"ETH",decimals:18},rpcUrls:[CFG.rpc],blockExplorerUrls:[CFG.explorer]}]}); } }
+  }
+  async function connect(){
+    $("wallet").disabled=true; $("wallet").textContent="Connecting…";
+    try{ const eip=await getEip1193(); await ensureNetwork(eip);
+      const bp=new ethers.BrowserProvider(eip,"any"); signer=await bp.getSigner(); account=await signer.getAddress();
+      $("wallet").textContent=account.slice(0,6)+"…"+account.slice(-4); $("wallet").disabled=false;
+      loadAll(); if (selectedId!==null) detailRefresh();
+    }catch(e){ $("wallet").textContent="Connect wallet"; $("wallet").disabled=false; toast(e.message||"Connect failed"); }
+  }
+  async function needWallet(){ if(!signer){ await connect(); } return !!signer; }
+
+  function c(){ return new ethers.Contract(CFG.market, MARKET_ABI, readProvider); }
+  function closeStr(ts){
+    const ms=Number(ts)*1000, diff=ms-Date.now(); if (diff<=0) return "closed";
+    const min=Math.round(diff/60000); if (min<60) return "closes in "+min+"m";
+    const h=Math.round(min/60); if (h<24) return "closes in "+h+"h"; return "closes "+new Date(ms).toLocaleDateString();
+  }
+  function cardHTML(m){
+    const py=Number(m.poolYes),pn=Number(m.poolNo),tot=py+pn,yS=tot>0?py/tot:0.5;
+    const total=fmt(BigInt(m.poolYes)+BigInt(m.poolNo)); let pill, sub;
+    if (m.resolved){ pill='<span class="pill win">RESOLVED · '+(m.winner==0?"YES":"NO")+'</span>'; sub="Pool "+total+" gUSDC"; }
+    else if (Number(m.closeTime)*1000<=Date.now()){ pill='<span class="pill closed">CLOSED</span>'; sub="Pool "+total+" gUSDC · settling…"; }
+    else { pill='<span class="pill live">● LIVE</span>'; sub="Pool "+total+" gUSDC · "+closeStr(m.closeTime); }
+    return '<div class="mcard" data-id="'+m.id+'"><div class="mq">'+esc(m.question)+'</div>'
+      +'<div class="mini"><div class="y" style="width:'+(yS*100).toFixed(0)+'%"></div></div>'
+      +'<div class="mmeta"><span class="yt">YES '+(yS*100).toFixed(0)+'%</span><span class="nt">NO '+((1-yS)*100).toFixed(0)+'%</span></div>'
+      +'<div class="msub"><span>'+sub+'</span>'+pill+'</div></div>';
+  }
+  async function loadAll(){
+    let count;
+    try{ count=Number(await c().marketCount()); }
+    catch(e){ $("listActive").innerHTML='<div class="listempty">Couldn\'t read markets. Check CFG.</div>'; return; }
+    if (count===0){ $("listActive").innerHTML='<div class="listempty">No markets yet.</div>'; $("listEnded").innerHTML='<div class="listempty">No markets yet.</div>'; return; }
+    const ids=[]; for(let i=0;i<count;i++){ if((CFG.hide||[]).indexOf(i)===-1) ids.push(i); }
+    const markets=await Promise.all(ids.map(async id=>{ try{ const m=await c().getMarket(id); return {id, question:m.question, closeTime:m.closeTime, resolved:m.resolved, winner:m.winner, hasWinner:m.hasWinner, poolYes:m.poolYes, poolNo:m.poolNo}; }catch(_){ return null; }}));
+    const now=Date.now(); const active=[], ended=[];
+    markets.filter(Boolean).forEach(m=>{ (!m.resolved && Number(m.closeTime)*1000>now ? active : ended).push(m); });
+    active.sort((a,b)=>Number(a.closeTime)-Number(b.closeTime)); ended.sort((a,b)=>b.id-a.id);
+    $("listActive").innerHTML = active.length ? active.map(cardHTML).join("") : '<div class="listempty">No active markets right now.</div>';
+    $("listEnded").innerHTML  = ended.length  ? ended.map(cardHTML).join("")  : '<div class="listempty">No ended markets yet.</div>';
+    document.querySelectorAll(".mcard").forEach(el=>el.onclick=()=>openDetail(Number(el.dataset.id)));
+  }
+
+  let selectedId=null;
+  async function openDetail(id){ selectedId=id; $("detail").classList.add("on"); window.scrollTo(0,0); $("amt").value="10"; await detailRefresh(); }
+  function closeDetail(){ selectedId=null; $("detail").classList.remove("on"); loadAll(); }
+  $("back").onclick=closeDetail;
+  async function detailRefresh(){
+    if (selectedId===null) return;
+    try{
+      const m=await c().getMarket(selectedId); renderDetail(m);
+      if (account){
+        const [s,bal]=await Promise.all([c().getStake(selectedId,account), new ethers.Contract(CFG.usdc,USDC_ABI,readProvider).balanceOf(account)]);
+        $("posY").textContent=fmt(s.yes); $("posN").textContent=fmt(s.no); $("usdcBal").textContent=fmt(bal)+" gUSDC";
+        if (m.resolved){ const [q,already]=await Promise.all([c().quoteClaim(selectedId,account),c().claimed(selectedId,account)]);
+          const b=$("claim"); if (q>0n&&!already){ b.style.display="block"; b.textContent="Claim "+fmt(q)+" gUSDC"; } else b.style.display="none"; }
+        else $("claim").style.display="none";
+      }
+    }catch(e){ toast(e.shortMessage||e.message); }
+  }
+  function renderDetail(m){
+    $("question").textContent=m.question;
+    const py=Number(m.poolYes),pn=Number(m.poolNo),tot=py+pn,yS=tot>0?py/tot:0.5,nS=tot>0?pn/tot:0.5;
+    $("yesP").textContent=(yS*100).toFixed(1)+"%"; $("noP").textContent=(nS*100).toFixed(1)+"%";
+    $("segYes").style.width=Math.max(8,yS*100)+"%"; $("segNo").style.width=Math.max(8,nS*100)+"%";
+    $("poolYes").textContent="YES pool: "+fmt(m.poolYes); $("poolNo").textContent="NO pool: "+fmt(m.poolNo);
+    $("source").innerHTML=CFG.sourceLabel+' <span>— read at resolution and reported on-chain. On Rialo this read happens on-chain (Rialo Edge).</span>';
+    const open=!m.resolved&&Number(m.closeTime)*1000>Date.now();
+    $("buyY").disabled=!open; $("buyN").disabled=!open;
+    const b=$("banner");
+    if (m.resolved){ b.className="banner show"; b.innerHTML='<span class="w">Resolved: '+(m.winner==0?"YES":"NO")+'</span>'+(m.hasWinner?'':' <span class="muted">· no winning stakes, refundable</span>'); }
+    else if (!open){ b.className="banner show"; b.innerHTML='<span class="muted">Closed — settling from source…</span>'; }
+    else b.className="banner";
+  }
+  async function placeBet(outcome){
+    if (selectedId===null) return; if(!(await needWallet())) return;
+    const amount=toUnits($("amt").value); if(amount<=0n){ toast("Enter an amount"); return; }
+    try{
+      const usdc=new ethers.Contract(CFG.usdc,USDC_ABI,signer);
+      if ((await usdc.allowance(account,CFG.market))<amount){ toast("Approving gUSDC…"); await (await usdc.approve(CFG.market,ethers.MaxUint256)).wait(); }
+      const market=new ethers.Contract(CFG.market,MARKET_ABI,signer);
+      toast("Placing "+(outcome===0?"YES":"NO")+" bet…"); await (await market.bet(selectedId,outcome,amount)).wait();
+      toast("Bet confirmed"); await detailRefresh();
+    }catch(e){ toast(e.shortMessage||e.reason||e.message); }
+  }
+  async function faucet(){
+    if(!(await needWallet())) return;
+    try{ const usdc=new ethers.Contract(CFG.usdc,USDC_ABI,signer); toast("Minting 1,000 test gUSDC…");
+      await (await usdc.mint(1000n*10n**DEC)).wait(); toast("Minted 1,000 gUSDC"); await detailRefresh(); }catch(e){ toast(e.shortMessage||e.message); }
+  }
+  async function claim(){
+    if (selectedId===null) return; if(!(await needWallet())) return;
+    try{ const market=new ethers.Contract(CFG.market,MARKET_ABI,signer); toast("Claiming…");
+      await (await market.claim(selectedId)).wait(); toast("Claimed"); await detailRefresh(); }catch(e){ toast(e.shortMessage||e.reason||e.message); }
+  }
+  [10,25,50,100].forEach(v=>{ const ch=document.createElement("div"); ch.className="chip"; ch.textContent=v; ch.onclick=()=>$("amt").value=v; $("chips").appendChild(ch); });
+  $("buyY").onclick=()=>placeBet(0); $("buyN").onclick=()=>placeBet(1); $("faucet").onclick=faucet; $("claim").onclick=claim; $("wallet").onclick=connect;
+
+  loadAll(); setInterval(()=>{ loadAll(); if (selectedId!==null) detailRefresh(); }, 15000);
+})();
+</script>
+</body>
+</html>

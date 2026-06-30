@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/ask.js": {
+      "includeFiles": "api/rialo-docs.txt"
+    }
+  }
+}

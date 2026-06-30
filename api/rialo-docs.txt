@@ -1,0 +1,8 @@
+PASTE YOUR RIALO DOCUMENTATION HERE.
+
+Replace this text with the Rialo docs you want the assistant to use
+(architecture, Rialo Edge, Workflow, Stream, consensus, devnet status, FAQ, etc.).
+The assistant will answer strictly from this text and say "I don't know" otherwise.
+
+You can paste anything here freely now — code samples, backticks, symbols — it's
+plain text, so it can't break the app.
